@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageSpeed Insights - Sitemap Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-secondary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+        
+        .progress-bar-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .progress-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .summary-card .number {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        
+        .results-table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        
+        thead {
+            background: #333;
+            color: white;
+        }
+        
+        th {
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .url-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .score {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 45px;
+            text-align: center;
+        }
+        
+        .score-good {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .score-average {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .score-poor {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-pass {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .status-fail {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            font-size: 12px;
+        }
+        
+        .metric-good {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .metric-needs-improvement {
+            color: #ffc107;
+            font-weight: 600;
+        }
+        
+        .metric-poor {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .device-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .device-mobile {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .device-desktop {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 PageSpeed Insights - Sitemap Analyzer</h1>
+        <p class="subtitle">Analyze performance, accessibility, SEO, and best practices for all pages in your sitemap</p>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <label for="sitemapUrl">XML Sitemap URL</label>
+                <input type="text" id="sitemapUrl" placeholder="https://example.com/page-sitemap.xml" value="https://www.desertridgeperiodontics.com/page-sitemap.xml">
+            </div>
+            
+            <div class="input-group">
+                <label for="apiKey">PageSpeed Insights API Key</label>
+                <input type="text" id="apiKey" placeholder="Enter your Google PageSpeed Insights API Key">
+            </div>
+            
+            <div class="info-box">
+                <strong>📝 Note:</strong> Get your free API key from <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank">Google PageSpeed Insights API</a>. 
+                Without an API key, you may hit rate limits.
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-primary" onclick="startAnalysis()">
+                    <span id="analyzeButtonText">Start Analysis</span>
+                </button>
+                <button class="btn-secondary" id="exportBtn" onclick="exportToGoogleSheets()" disabled>
+                    Export to Google Sheets
+                </button>
+            </div>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <div class="progress-section" id="progressSection">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="progress-text" id="progressText">Initializing...</div>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <h2>Analysis Results</h2>
+            
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total URLs</h3>
+                    <div class="number" id="totalUrls">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Passed</h3>
+                    <div class="number" id="passedCount">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Failed</h3>
+                    <div class="number" id="failedCount">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Completion</h3>
+                    <div class="number" id="completionRate">0%</div>
+                </div>
+            </div>
+            
+            <div class="results-table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>Device</th>
+                            <th>Performance</th>
+                            <th>Accessibility</th>
+                            <th>Best Practices</th>
+                            <th>SEO</th>
+                            <th>FCP</th>
+                            <th>LCP</th>
+                            <th>Status</th>
+                            <th>Issues</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let analysisResults = [];
+        let currentAnalysis = null;
+        
+        // Fetch and parse XML sitemap
+        async function fetchSitemap(url) {
+            try {
+                // Use a CORS proxy for client-side fetching
+                const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                const response = await fetch(proxyUrl + encodeURIComponent(url));
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch sitemap');
+                }
+                
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, 'text/xml');
+                
+                // Check for XML parsing errors
+                const parserError = xmlDoc.querySelector('parsererror');
+                if (parserError) {
+                    throw new Error('Invalid XML format');
+                }
+                
+                // Extract URLs from sitemap
+                const urlElements = xmlDoc.querySelectorAll('url > loc');
+                const urls = Array.from(urlElements).map(el => el.textContent.trim());
+                
+                return urls;
+            } catch (error) {
+                throw new Error(`Sitemap fetch error: ${error.message}`);
+            }
+        }
+        
+        // Call PageSpeed Insights API
+        async function analyzeUrl(url, device, apiKey) {
+            const strategy = device.toLowerCase();
+            let apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&strategy=${strategy}&category=performance&category=accessibility&category=best-practices&category=seo`;
+            
+            if (apiKey) {
+                apiUrl += `&key=${apiKey}`;
+            }
+            
+            try {
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || 'API request failed');
+                }
+                
+                const data = await response.json();
+                return parsePageSpeedData(data, url, device);
+            } catch (error) {
+                return {
+                    url,
+                    device,
+                    error: error.message,
+                    performance: 0,
+                    accessibility: 0,
+                    bestPractices: 0,
+                    seo: 0,
+                    fcp: 'N/A',
+                    lcp: 'N/A',
+                    status: 'FAIL',
+                    issues: ['API Error: ' + error.message]
+                };
+            }
+        }
+        
+        // Parse PageSpeed Insights data
+        function parsePageSpeedData(data, url, device) {
+            const lighthouseResult = data.lighthouseResult;
+            const categories = lighthouseResult.categories;
+            const audits = lighthouseResult.audits;
+            
+            // Extract scores (multiply by 100 to get percentage)
+            const performance = Math.round((categories.performance?.score || 0) * 100);
+            const accessibility = Math.round((categories.accessibility?.score || 0) * 100);
+            const bestPractices = Math.round((categories['best-practices']?.score || 0) * 100);
+            const seo = Math.round((categories.seo?.score || 0) * 100);
+            
+            // Extract metrics
+            const fcpValue = audits['first-contentful-paint']?.numericValue || 0;
+            const lcpValue = audits['largest-contentful-paint']?.numericValue || 0;
+            
+            // Convert to seconds
+            const fcp = (fcpValue / 1000).toFixed(2);
+            const lcp = (lcpValue / 1000).toFixed(2);
+            
+            // Determine pass/fail
+            const issues = [];
+            let status = 'PASS';
+            
+            if (performance < 90) {
+                issues.push(`Performance: ${performance} (required: ≥90)`);
+                status = 'FAIL';
+            }
+            
+            if (fcp > 1.8) {
+                issues.push(`FCP: ${fcp}s (required: ≤1.8s)`);
+                status = 'FAIL';
+            }
+            
+            if (lcp > 2.5) {
+                issues.push(`LCP: ${lcp}s (required: ≤2.5s)`);
+                status = 'FAIL';
+            }
+            
+            if (accessibility < 100) {
+                issues.push(`Accessibility: ${accessibility} (required: 100)`);
+                status = 'FAIL';
+            }
+            
+            if (seo < 100) {
+                issues.push(`SEO: ${seo} (required: 100)`);
+                status = 'FAIL';
+            }
+            
+            return {
+                url,
+                device,
+                performance,
+                accessibility,
+                bestPractices,
+                seo,
+                fcp: parseFloat(fcp),
+                lcp: parseFloat(lcp),
+                status,
+                issues: issues.length > 0 ? issues : ['All checks passed']
+            };
+        }
+        
+        // Start the analysis
+        async function startAnalysis() {
+            const sitemapUrl = document.getElementById('sitemapUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            if (!sitemapUrl) {
+                showError('Please enter a sitemap URL');
+                return;
+            }
+            
+            // Reset UI
+            hideError();
+            analysisResults = [];
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('exportBtn').disabled = true;
+            document.getElementById('analyzeButtonText').innerHTML = '<span class="loading"></span> Analyzing...';
+            
+            try {
+                // Fetch sitemap
+                updateProgress(0, 'Fetching sitemap...');
+                const urls = await fetchSitemap(sitemapUrl);
+                
+                if (urls.length === 0) {
+                    throw new Error('No URLs found in sitemap');
+                }
+                
+                updateProgress(5, `Found ${urls.length} URLs. Starting analysis...`);
+                
+                // Analyze each URL for both mobile and desktop
+                const totalTests = urls.length * 2; // mobile + desktop
+                let completed = 0;
+                
+                for (const url of urls) {
+                    // Analyze mobile
+                    updateProgress(
+                        5 + (completed / totalTests) * 95,
+                        `Analyzing ${completed + 1}/${totalTests}: ${url} (Mobile)...`
+                    );
+                    
+                    const mobileResult = await analyzeUrl(url, 'mobile', apiKey);
+                    analysisResults.push(mobileResult);
+                    completed++;
+                    
+                    // Small delay to avoid rate limiting
+                    await sleep(1000);
+                    
+                    // Analyze desktop
+                    updateProgress(
+                        5 + (completed / totalTests) * 95,
+                        `Analyzing ${completed + 1}/${totalTests}: ${url} (Desktop)...`
+                    );
+                    
+                    const desktopResult = await analyzeUrl(url, 'desktop', apiKey);
+                    analysisResults.push(desktopResult);
+                    completed++;
+                    
+                    // Update results table incrementally
+                    displayResults();
+                    
+                    // Small delay to avoid rate limiting
+                    await sleep(1000);
+                }
+                
+                updateProgress(100, 'Analysis complete!');
+                
+                // Show results
+                displayResults();
+                document.getElementById('exportBtn').disabled = false;
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('analyzeButtonText').textContent = 'Start Analysis';
+            }
+        }
+        
+        // Display results in table
+        function displayResults() {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsBody = document.getElementById('resultsBody');
+            
+            resultsSection.style.display = 'block';
+            
+            // Update summary
+            const totalTests = analysisResults.length;
+            const uniqueUrls = new Set(analysisResults.map(r => r.url)).size;
+            const failedTests = analysisResults.filter(r => r.status === 'FAIL').length;
+            const passedTests = totalTests - failedTests;
+            
+            document.getElementById('totalUrls').textContent = uniqueUrls;
+            document.getElementById('passedCount').textContent = passedTests;
+            document.getElementById('failedCount').textContent = failedTests;
+            document.getElementById('completionRate').textContent = 
+                totalTests > 0 ? Math.round((passedTests / totalTests) * 100) + '%' : '0%';
+            
+            // Clear and populate table
+            resultsBody.innerHTML = '';
+            
+            analysisResults.forEach(result => {
+                const row = document.createElement('tr');
+                if (result.status === 'FAIL') {
+                    row.style.background = '#fff5f5';
+                }
+                
+                row.innerHTML = `
+                    <td class="url-cell" title="${result.url}">${result.url}</td>
+                    <td><span class="device-badge device-${result.device.toLowerCase()}">${result.device}</span></td>
+                    <td><span class="${getScoreClass(result.performance)}">${result.performance}</span></td>
+                    <td><span class="${getScoreClass(result.accessibility)}">${result.accessibility}</span></td>
+                    <td><span class="${getScoreClass(result.bestPractices)}">${result.bestPractices}</span></td>
+                    <td><span class="${getScoreClass(result.seo)}">${result.seo}</span></td>
+                    <td><span class="${getMetricClass(result.fcp, 1.8)}">${result.fcp}s</span></td>
+                    <td><span class="${getMetricClass(result.lcp, 2.5)}">${result.lcp}s</span></td>
+                    <td><span class="status-${result.status.toLowerCase()}">${result.status}</span></td>
+                    <td class="metric-value">${result.issues.join('; ')}</td>
+                `;
+                
+                resultsBody.appendChild(row);
+            });
+        }
+        
+        // Get CSS class for score
+        function getScoreClass(score) {
+            if (score >= 90) return 'score score-good';
+            if (score >= 50) return 'score score-average';
+            return 'score score-poor';
+        }
+        
+        // Get CSS class for metric
+        function getMetricClass(value, threshold) {
+            if (typeof value !== 'number') return 'metric-value';
+            if (value <= threshold) return 'metric-value metric-good';
+            if (value <= threshold * 1.5) return 'metric-value metric-needs-improvement';
+            return 'metric-value metric-poor';
+        }
+        
+        // Update progress bar
+        function updateProgress(percent, text) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = Math.round(percent) + '%';
+            progressText.textContent = text;
+        }
+        
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Hide error message
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        // Sleep utility
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Export to Google Sheets
+        function exportToGoogleSheets() {
+            if (analysisResults.length === 0) {
+                showError('No results to export');
+                return;
+            }
+            
+            // Prepare CSV data
+            const headers = ['URL', 'Device', 'Performance', 'Accessibility', 'Best Practices', 'SEO', 'FCP (s)', 'LCP (s)', 'Status', 'Issues'];
+            const rows = [headers];
+            
+            analysisResults.forEach(result => {
+                rows.push([
+                    result.url,
+                    result.device,
+                    result.performance,
+                    result.accessibility,
+                    result.bestPractices,
+                    result.seo,
+                    result.fcp,
+                    result.lcp,
+                    result.status,
+                    result.issues.join('; ')
+                ]);
+            });
+            
+            // Convert to CSV
+            const csv = rows.map(row => 
+                row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+            
+            // Create download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `pagespeed-analysis-${Date.now()}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Show instructions for Google Sheets
+            alert('CSV file downloaded! To import to Google Sheets:\n\n1. Open Google Sheets\n2. Go to File > Import\n3. Upload the CSV file\n4. Use conditional formatting to highlight failed rows (Status = FAIL) in red');
+        }
+    </script>
+</body>
+</html>
