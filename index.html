@@ -212,6 +212,10 @@
             white-space: nowrap;
         }
         
+        .url-cell a:hover {
+            text-decoration: underline;
+        }
+        
         .score {
             font-weight: 600;
             padding: 4px 8px;
@@ -691,8 +695,10 @@
                     row.style.background = '#fff5f5';
                 }
                 
+                const psiLink = `https://pagespeed.web.dev/analysis?url=${encodeURIComponent(result.url)}&form_factor=${result.device.toLowerCase()}`;
+                
                 row.innerHTML = `
-                    <td class="url-cell" title="${result.url}">${result.url}</td>
+                    <td class="url-cell" title="${result.url}"><a href="${psiLink}" target="_blank" style="color: #667eea; text-decoration: none;">${result.url}</a></td>
                     <td><span class="device-badge device-${result.device.toLowerCase()}">${result.device}</span></td>
                     <td><span class="${getScoreClass(result.performance)}">${result.performance}</span></td>
                     <td><span class="${getStrictScoreClass(result.accessibility)}">${result.accessibility}</span></td>
@@ -829,10 +835,11 @@
                 const fcpClass = result.fcp <= 1.8 ? 'metric-good' : (result.fcp <= 2.7 ? 'metric-needs-improvement' : 'metric-poor');
                 const lcpClass = result.lcp <= 2.5 ? 'metric-good' : (result.lcp <= 3.75 ? 'metric-needs-improvement' : 'metric-poor');
                 const statusClass = result.status === 'PASS' ? 'status-pass' : 'status-fail';
+                const psiLink = `https://pagespeed.web.dev/analysis?url=${encodeURIComponent(result.url)}&form_factor=${result.device.toLowerCase()}`;
                 
                 tableRows += `
                     <tr style="${rowBg}">
-                        <td class="url-cell" title="${result.url}">${result.url}</td>
+                        <td class="url-cell" title="${result.url}"><a href="${psiLink}" target="_blank" style="color: #667eea; text-decoration: none;">${result.url}</a></td>
                         <td><span class="device-badge device-${result.device.toLowerCase()}">${result.device}</span></td>
                         <td><span class="score ${perfClass}">${result.performance}</span></td>
                         <td><span class="score ${accessClass}">${result.accessibility}</span></td>
