@@ -342,14 +342,14 @@
             <div class="info-box">
                 <strong>📝 Note:</strong> Get your free API key from <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank">Google PageSpeed Insights API</a>. 
                 Without an API key, you may hit rate limits.
-            </div>primary" onclick="toggleManualInput()" style="background: #6c757d;">
-                    Manual URL Input
-                </button>
-                <button class="btn-
+            </div>
             
             <div class="button-group">
                 <button class="btn-primary" onclick="startAnalysis()">
                     <span id="analyzeButtonText">Start Analysis</span>
+                </button>
+                <button class="btn-primary" onclick="toggleManualInput()" style="background: #6c757d;">
+                    Manual URL Input
                 </button>
                 <button class="btn-secondary" id="exportBtn" onclick="exportToGoogleSheets()" disabled>
                     Export to Google Sheets
@@ -551,7 +551,16 @@
                 device,
                 performance,
                 accessibility,
-           Toggle manual URL input
+                bestPractices,
+                seo,
+                fcp: parseFloat(fcp),
+                lcp: parseFloat(lcp),
+                status,
+                issues: issues.length > 0 ? issues : ['All checks passed']
+            };
+        }
+        
+        // Toggle manual URL input
         function toggleManualInput() {
             const section = document.getElementById('manualUrlSection');
             section.style.display = section.style.display === 'none' ? 'block' : 'none';
@@ -596,16 +605,7 @@
                     
                     if (urls.length === 0) {
                         throw new Error('No URLs found in sitemap');
-                    };
-            document.getElementById('analyzeButtonText').innerHTML = '<span class="loading"></span> Analyzing...';
-            
-            try {
-                // Fetch sitemap
-                updateProgress(0, 'Fetching sitemap...');
-                const urls = await fetchSitemap(sitemapUrl);
-                
-                if (urls.length === 0) {
-                    throw new Error('No URLs found in sitemap');
+                    }
                 }
                 
                 updateProgress(5, `Found ${urls.length} URLs. Starting analysis...`);
