@@ -690,9 +690,9 @@
                     <td class="url-cell" title="${result.url}">${result.url}</td>
                     <td><span class="device-badge device-${result.device.toLowerCase()}">${result.device}</span></td>
                     <td><span class="${getScoreClass(result.performance)}">${result.performance}</span></td>
-                    <td><span class="${getScoreClass(result.accessibility)}">${result.accessibility}</span></td>
+                    <td><span class="${getStrictScoreClass(result.accessibility)}">${result.accessibility}</span></td>
                     <td><span class="${getScoreClass(result.bestPractices)}">${result.bestPractices}</span></td>
-                    <td><span class="${getScoreClass(result.seo)}">${result.seo}</span></td>
+                    <td><span class="${getStrictScoreClass(result.seo)}">${result.seo}</span></td>
                     <td><span class="${getMetricClass(result.fcp, 1.8)}">${result.fcp}s</span></td>
                     <td><span class="${getMetricClass(result.lcp, 2.5)}">${result.lcp}s</span></td>
                     <td><span class="status-${result.status.toLowerCase()}">${result.status}</span></td>
@@ -707,6 +707,12 @@
         function getScoreClass(score) {
             if (score >= 90) return 'score score-good';
             if (score >= 50) return 'score score-average';
+            return 'score score-poor';
+        }
+        
+        // Get CSS class for Accessibility and SEO (must be 100 to be green)
+        function getStrictScoreClass(score) {
+            if (score === 100) return 'score score-good';
             return 'score score-poor';
         }
         
