@@ -328,6 +328,12 @@
                 <input type="text" id="sitemapUrl" placeholder="https://example.com/page-sitemap.xml" value="https://www.desertridgeperiodontics.com/page-sitemap.xml">
             </div>
             
+            <div class="input-group" id="manualUrlSection" style="display: none;">
+                <label for="manualUrls">Or Enter URLs Manually (one per line)</label>
+                <textarea id="manualUrls" rows="5" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; font-family: monospace;"></textarea>
+                <small style="color: #666;">If sitemap fetch fails due to CORS, paste URLs here directly</small>
+            </div>
+            
             <div class="input-group">
                 <label for="apiKey">PageSpeed Insights API Key</label>
                 <input type="text" id="apiKey" placeholder="Enter your Google PageSpeed Insights API Key" value="AIzaSyC_NF6zI4gAg3H6HUZhI6xIkeHFVJR4AwE">
@@ -336,7 +342,10 @@
             <div class="info-box">
                 <strong>📝 Note:</strong> Get your free API key from <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank">Google PageSpeed Insights API</a>. 
                 Without an API key, you may hit rate limits.
-            </div>
+            </div>primary" onclick="toggleManualInput()" style="background: #6c757d;">
+                    Manual URL Input
+                </button>
+                <button class="btn-
             
             <div class="button-group">
                 <button class="btn-primary" onclick="startAnalysis()">
@@ -408,33 +417,48 @@
         
         // Fetch and parse XML sitemap
         async function fetchSitemap(url) {
-            try {
-                // Use a CORS proxy for client-side fetching
-                const proxyUrl = 'https://api.allorigins.win/raw?url=';
-                const response = await fetch(proxyUrl + encodeURIComponent(url));
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch sitemap');
+            // List of CORS proxies to try
+            const corsProxies = [
+                '', // Try direct fetch first
+                'https://corsproxy.io/?',
+                'https://api.codetabs.com/v1/proxy?quest=',
+                'https://cors-anywhere.herokuapp.com/'
+            ];
+            
+            for (const proxy of corsProxies) {
+                try {
+                    const fetchUrl = proxy ? proxy + encodeURIComponent(url) : url;
+                    const response = await fetch(fetchUrl);
+                    
+                    if (!response.ok) {
+                        continue; // Try next proxy
+                    }
+                    
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, 'text/xml');
+                    
+                    // Check for XML parsing errors
+                    const parserError = xmlDoc.querySelector('parsererror');
+                    if (parserError) {
+                        continue; // Try next proxy
+                    }
+                    
+                    // Extract URLs from sitemap
+                    const urlElements = xmlDoc.querySelectorAll('url > loc');
+                    const urls = Array.from(urlElements).map(el => el.textContent.trim());
+                    
+                    if (urls.length > 0) {
+                        return urls;
+                    }
+                } catch (error) {
+                    // Continue to next proxy
+                    continue;
                 }
-                
-                const text = await response.text();
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(text, 'text/xml');
-                
-                // Check for XML parsing errors
-                const parserError = xmlDoc.querySelector('parsererror');
-                if (parserError) {
-                    throw new Error('Invalid XML format');
-                }
-                
-                // Extract URLs from sitemap
-                const urlElements = xmlDoc.querySelectorAll('url > loc');
-                const urls = Array.from(urlElements).map(el => el.textContent.trim());
-                
-                return urls;
-            } catch (error) {
-                throw new Error(`Sitemap fetch error: ${error.message}`);
             }
+            
+            // If all proxies fail, show manual input option
+            throw new Error('Unable to fetch sitemap due to CORS restrictions. Please use the manual URL input option below.');
         }
         
         // Call PageSpeed Insights API
@@ -527,22 +551,32 @@
                 device,
                 performance,
                 accessibility,
-                bestPractices,
-                seo,
-                fcp: parseFloat(fcp),
-                lcp: parseFloat(lcp),
-                status,
-                issues: issues.length > 0 ? issues : ['All checks passed']
-            };
+           Toggle manual URL input
+        function toggleManualInput() {
+            const section = document.getElementById('manualUrlSection');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
         }
         
         // Start the analysis
         async function startAnalysis() {
             const sitemapUrl = document.getElementById('sitemapUrl').value.trim();
+            const manualUrls = document.getElementById('manualUrls').value.trim();
             const apiKey = document.getElementById('apiKey').value.trim();
             
-            if (!sitemapUrl) {
-                showError('Please enter a sitemap URL');
+            let urls = [];
+            
+            // Check if manual URLs are provided
+            if (manualUrls) {
+                urls = manualUrls.split('\n')
+                    .map(url => url.trim())
+                    .filter(url => url && url.startsWith('http'));
+                
+                if (urls.length === 0) {
+                    showError('Please enter valid URLs (one per line)');
+                    return;
+                }
+            } else if (!sitemapUrl) {
+                showError('Please enter a sitemap URL or use manual URL input');
                 return;
             }
             
@@ -552,6 +586,17 @@
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('progressSection').style.display = 'block';
             document.getElementById('exportBtn').disabled = true;
+            document.getElementById('analyzeButtonText').innerHTML = '<span class="loading"></span> Analyzing...';
+            
+            try {
+                // Fetch sitemap if not using manual URLs
+                if (urls.length === 0) {
+                    updateProgress(0, 'Fetching sitemap...');
+                    urls = await fetchSitemap(sitemapUrl);
+                    
+                    if (urls.length === 0) {
+                        throw new Error('No URLs found in sitemap');
+                    };
             document.getElementById('analyzeButtonText').innerHTML = '<span class="loading"></span> Analyzing...';
             
             try {
