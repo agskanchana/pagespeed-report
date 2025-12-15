@@ -352,7 +352,10 @@
                     Manual URL Input
                 </button>
                 <button class="btn-secondary" id="exportBtn" onclick="exportToGoogleSheets()" disabled>
-                    Export to Google Sheets
+                    Export to CSV
+                </button>
+                <button class="btn-secondary" id="exportHtmlBtn" onclick="exportToHtml()" disabled style="background: #17a2b8;">
+                    Export to HTML
                 </button>
             </div>
         </div>
@@ -595,6 +598,7 @@
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('progressSection').style.display = 'block';
             document.getElementById('exportBtn').disabled = true;
+            document.getElementById('exportHtmlBtn').disabled = true;
             document.getElementById('analyzeButtonText').innerHTML = '<span class="loading"></span> Analyzing...';
             
             try {
@@ -650,6 +654,7 @@
                 // Show results
                 displayResults();
                 document.getElementById('exportBtn').disabled = false;
+                document.getElementById('exportHtmlBtn').disabled = false;
                 
             } catch (error) {
                 showError(error.message);
@@ -797,6 +802,334 @@
             
             // Show instructions for Google Sheets
             alert('CSV file downloaded! To import to Google Sheets:\n\n1. Open Google Sheets\n2. Go to File > Import\n3. Upload the CSV file\n4. Use conditional formatting to highlight failed rows (Status = FAIL) in red');
+        }
+        
+        // Export to HTML
+        function exportToHtml() {
+            if (analysisResults.length === 0) {
+                showError('No results to export');
+                return;
+            }
+            
+            // Calculate summary stats
+            const totalTests = analysisResults.length;
+            const uniqueUrls = new Set(analysisResults.map(r => r.url)).size;
+            const failedTests = analysisResults.filter(r => r.status === 'FAIL').length;
+            const passedTests = totalTests - failedTests;
+            const completionRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+            
+            // Generate table rows
+            let tableRows = '';
+            analysisResults.forEach(result => {
+                const rowBg = result.status === 'FAIL' ? 'background: #fff5f5;' : '';
+                const perfClass = result.performance >= 90 ? 'score-good' : (result.performance >= 50 ? 'score-average' : 'score-poor');
+                const accessClass = result.accessibility === 100 ? 'score-good' : 'score-poor';
+                const bpClass = result.bestPractices >= 90 ? 'score-good' : (result.bestPractices >= 50 ? 'score-average' : 'score-poor');
+                const seoClass = result.seo === 100 ? 'score-good' : 'score-poor';
+                const fcpClass = result.fcp <= 1.8 ? 'metric-good' : (result.fcp <= 2.7 ? 'metric-needs-improvement' : 'metric-poor');
+                const lcpClass = result.lcp <= 2.5 ? 'metric-good' : (result.lcp <= 3.75 ? 'metric-needs-improvement' : 'metric-poor');
+                const statusClass = result.status === 'PASS' ? 'status-pass' : 'status-fail';
+                
+                tableRows += `
+                    <tr style="${rowBg}">
+                        <td class="url-cell" title="${result.url}">${result.url}</td>
+                        <td><span class="device-badge device-${result.device.toLowerCase()}">${result.device}</span></td>
+                        <td><span class="score ${perfClass}">${result.performance}</span></td>
+                        <td><span class="score ${accessClass}">${result.accessibility}</span></td>
+                        <td><span class="score ${bpClass}">${result.bestPractices}</span></td>
+                        <td><span class="score ${seoClass}">${result.seo}</span></td>
+                        <td><span class="metric-value ${fcpClass}">${result.fcp}s</span></td>
+                        <td><span class="metric-value ${lcpClass}">${result.lcp}s</span></td>
+                        <td><span class="${statusClass}">${result.status}</span></td>
+                        <td class="metric-value">${result.issues.join('; ')}</td>
+                    </tr>`;
+            });
+            
+            // Generate complete HTML
+            const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageSpeed Insights Report - ${new Date().toLocaleDateString()}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .summary-card .number {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        
+        .results-table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        
+        thead {
+            background: #333;
+            color: white;
+        }
+        
+        th {
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .url-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .score {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            min-width: 45px;
+            text-align: center;
+        }
+        
+        .score-good {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .score-average {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .score-poor {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-pass {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .status-fail {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            font-size: 12px;
+        }
+        
+        .metric-good {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .metric-needs-improvement {
+            color: #ffc107;
+            font-weight: 600;
+        }
+        
+        .metric-poor {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .device-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .device-mobile {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .device-desktop {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .report-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .report-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 PageSpeed Insights Report</h1>
+        <p class="subtitle">Comprehensive performance analysis for all pages</p>
+        
+        <div class="report-info">
+            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            <p><strong>Total URLs Analyzed:</strong> ${uniqueUrls}</p>
+            <p><strong>Total Tests:</strong> ${totalTests} (Mobile + Desktop)</p>
+        </div>
+        
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Total URLs</h3>
+                <div class="number">${uniqueUrls}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Passed</h3>
+                <div class="number">${passedTests}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Failed</h3>
+                <div class="number">${failedTests}</div>
+            </div>
+            <div class="summary-card">
+                <h3>Success Rate</h3>
+                <div class="number">${completionRate}%</div>
+            </div>
+        </div>
+        
+        <h2>Detailed Results</h2>
+        
+        <div class="results-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Device</th>
+                        <th>Performance</th>
+                        <th>Accessibility</th>
+                        <th>Best Practices</th>
+                        <th>SEO</th>
+                        <th>FCP</th>
+                        <th>LCP</th>
+                        <th>Status</th>
+                        <th>Issues</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <h3 style="margin-bottom: 10px;">Scoring Criteria</h3>
+            <ul style="line-height: 1.8; color: #666;">
+                <li><strong>Performance:</strong> Must be ≥90 (Good: Green, Average: Yellow, Poor: Red)</li>
+                <li><strong>Accessibility:</strong> Must be 100 (Pass: Green, Fail: Red)</li>
+                <li><strong>SEO:</strong> Must be 100 (Pass: Green, Fail: Red)</li>
+                <li><strong>FCP (First Contentful Paint):</strong> Must be ≤1.8s (Good: Green, Needs Improvement: Yellow, Poor: Red)</li>
+                <li><strong>LCP (Largest Contentful Paint):</strong> Must be ≤2.5s (Good: Green, Needs Improvement: Yellow, Poor: Red)</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>`;
+            
+            // Create download
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `pagespeed-report-${Date.now()}.html`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
