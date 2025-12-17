@@ -407,6 +407,7 @@
                             <th>SEO</th>
                             <th>FCP</th>
                             <th>LCP</th>
+                            <th>CLS</th>
                             <th>Status</th>
                             <th>Issues</th>
                         </tr>
@@ -498,6 +499,7 @@
                     seo: 0,
                     fcp: 'N/A',
                     lcp: 'N/A',
+                    cls: 'N/A',
                     status: 'FAIL',
                     issues: ['API Error: ' + error.message]
                 };
@@ -519,10 +521,12 @@
             // Extract metrics
             const fcpValue = audits['first-contentful-paint']?.numericValue || 0;
             const lcpValue = audits['largest-contentful-paint']?.numericValue || 0;
+            const clsValue = audits['cumulative-layout-shift']?.numericValue || 0;
             
             // Convert to seconds
             const fcp = (fcpValue / 1000).toFixed(2);
             const lcp = (lcpValue / 1000).toFixed(2);
+            const cls = clsValue.toFixed(3);
             
             // Determine pass/fail
             const issues = [];
@@ -540,6 +544,11 @@
             
             if (lcp > 2.5) {
                 issues.push(`LCP: ${lcp}s (required: ≤2.5s)`);
+                status = 'FAIL';
+            }
+            
+            if (cls > 0.1) {
+                issues.push(`CLS: ${cls} (required: ≤0.1)`);
                 status = 'FAIL';
             }
             
@@ -562,6 +571,7 @@
                 seo,
                 fcp: parseFloat(fcp),
                 lcp: parseFloat(lcp),
+                cls: parseFloat(cls),
                 status,
                 issues: issues.length > 0 ? issues : ['All checks passed']
             };
@@ -706,6 +716,7 @@
                     <td><span class="${getStrictScoreClass(result.seo)}">${result.seo}</span></td>
                     <td><span class="${getMetricClass(result.fcp, 1.8)}">${result.fcp}s</span></td>
                     <td><span class="${getMetricClass(result.lcp, 2.5)}">${result.lcp}s</span></td>
+                    <td><span class="${getMetricClass(result.cls, 0.1)}">${result.cls}</span></td>
                     <td><span class="status-${result.status.toLowerCase()}">${result.status}</span></td>
                     <td class="metric-value">${result.issues.join('; ')}</td>
                 `;
@@ -770,7 +781,7 @@
             }
             
             // Prepare CSV data
-            const headers = ['URL', 'Device', 'Performance', 'Accessibility', 'Best Practices', 'SEO', 'FCP (s)', 'LCP (s)', 'Status', 'Issues'];
+            const headers = ['URL', 'Device', 'Performance', 'Accessibility', 'Best Practices', 'SEO', 'FCP (s)', 'LCP (s)', 'CLS', 'Status', 'Issues'];
             const rows = [headers];
             
             analysisResults.forEach(result => {
@@ -783,6 +794,7 @@
                     result.seo,
                     result.fcp,
                     result.lcp,
+                    result.cls,
                     result.status,
                     result.issues.join('; ')
                 ]);
@@ -834,6 +846,7 @@
                 const seoClass = result.seo === 100 ? 'score-good' : 'score-poor';
                 const fcpClass = result.fcp <= 1.8 ? 'metric-good' : (result.fcp <= 2.7 ? 'metric-needs-improvement' : 'metric-poor');
                 const lcpClass = result.lcp <= 2.5 ? 'metric-good' : (result.lcp <= 3.75 ? 'metric-needs-improvement' : 'metric-poor');
+                const clsClass = result.cls <= 0.1 ? 'metric-good' : (result.cls <= 0.25 ? 'metric-needs-improvement' : 'metric-poor');
                 const statusClass = result.status === 'PASS' ? 'status-pass' : 'status-fail';
                 const psiLink = `https://pagespeed.web.dev/analysis?url=${encodeURIComponent(result.url)}&form_factor=${result.device.toLowerCase()}`;
                 
@@ -847,6 +860,7 @@
                         <td><span class="score ${seoClass}">${result.seo}</span></td>
                         <td><span class="metric-value ${fcpClass}">${result.fcp}s</span></td>
                         <td><span class="metric-value ${lcpClass}">${result.lcp}s</span></td>
+                        <td><span class="metric-value ${clsClass}">${result.cls}</span></td>
                         <td><span class="${statusClass}">${result.status}</span></td>
                         <td class="metric-value">${result.issues.join('; ')}</td>
                     </tr>`;
@@ -1099,6 +1113,7 @@
                         <th>SEO</th>
                         <th>FCP</th>
                         <th>LCP</th>
+                        <th>CLS</th>
                         <th>Status</th>
                         <th>Issues</th>
                     </tr>
@@ -1117,6 +1132,7 @@
                 <li><strong>SEO:</strong> Must be 100 (Pass: Green, Fail: Red)</li>
                 <li><strong>FCP (First Contentful Paint):</strong> Must be ≤1.8s (Good: Green, Needs Improvement: Yellow, Poor: Red)</li>
                 <li><strong>LCP (Largest Contentful Paint):</strong> Must be ≤2.5s (Good: Green, Needs Improvement: Yellow, Poor: Red)</li>
+                <li><strong>CLS (Cumulative Layout Shift):</strong> Must be ≤0.1 (Good: Green, Needs Improvement: Yellow, Poor: Red)</li>
             </ul>
         </div>
     </div>
