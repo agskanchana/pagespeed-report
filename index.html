@@ -57,7 +57,8 @@
             color: #333;
         }
         
-        input[type="text"] {
+        input[type="text"],
+        input[type="password"] {
             width: 100%;
             padding: 12px;
             border: 2px solid #ddd;
@@ -66,9 +67,48 @@
             transition: border-color 0.3s;
         }
         
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        input[type="password"]:focus {
             outline: none;
             border-color: #667eea;
+        }
+        
+        .report-link-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .report-link-box h3 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+        
+        .report-link-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #28a745;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .report-link-box button {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .report-link-box button:hover {
+            background: #218838;
         }
         
         .button-group {
@@ -343,9 +383,24 @@
                 <input type="text" id="apiKey" placeholder="Enter your Google PageSpeed Insights API Key" value="AIzaSyC_NF6zI4gAg3H6HUZhI6xIkeHFVJR4AwE">
             </div>
             
+            <div class="input-group">
+                <label for="githubToken">GitHub Personal Access Token (for auto-upload)</label>
+                <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" onchange="saveGitHubCredentials()">
+            </div>
+            
+            <div class="input-group">
+                <label for="githubRepo">GitHub Repository (format: owner/repo)</label>
+                <input type="text" id="githubRepo" placeholder="username/repo-name" value="" onchange="saveGitHubCredentials()">
+            </div>
+            
             <div class="info-box">
                 <strong>📝 Note:</strong> Get your free API key from <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank">Google PageSpeed Insights API</a>. 
                 Without an API key, you may hit rate limits.
+            </div>
+            
+            <div class="info-box" style="background: #fff3cd; color: #856404;">
+                <strong>🔐 GitHub Setup:</strong> To auto-upload reports, create a <a href="https://github.com/settings/tokens/new" target="_blank">Personal Access Token</a> with <code>repo</code> permissions. 
+                Reports will be uploaded to the <code>reports/</code> folder in your repository.
             </div>
             
             <div class="button-group">
@@ -365,6 +420,16 @@
         </div>
         
         <div class="error-message" id="errorMessage"></div>
+        
+        <div class="report-link-box" id="reportLinkBox">
+            <h3>✅ Report Uploaded Successfully!</h3>
+            <p style="color: #155724; margin-bottom: 10px;">Your report has been uploaded to GitHub. Share this link:</p>
+            <input type="text" id="reportLinkInput" readonly>
+            <div>
+                <button onclick="copyReportLink()">📋 Copy Link</button>
+                <button onclick="openReportLink()">🔗 Open Report</button>
+            </div>
+        </div>
         
         <div class="progress-section" id="progressSection">
             <div class="progress-bar-container">
@@ -422,6 +487,32 @@
     <script>
         let analysisResults = [];
         let currentAnalysis = null;
+        
+        // Load saved credentials from localStorage on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedToken = localStorage.getItem('github_token');
+            const savedRepo = localStorage.getItem('github_repo');
+            
+            if (savedToken) {
+                document.getElementById('githubToken').value = savedToken;
+            }
+            if (savedRepo) {
+                document.getElementById('githubRepo').value = savedRepo;
+            }
+        });
+        
+        // Save credentials to localStorage when changed
+        function saveGitHubCredentials() {
+            const token = document.getElementById('githubToken').value.trim();
+            const repo = document.getElementById('githubRepo').value.trim();
+            
+            if (token) {
+                localStorage.setItem('github_token', token);
+            }
+            if (repo) {
+                localStorage.setItem('github_repo', repo);
+            }
+        }
         
         // Fetch and parse XML sitemap
         async function fetchSitemap(url) {
@@ -822,12 +913,32 @@
             alert('CSV file downloaded! To import to Google Sheets:\n\n1. Open Google Sheets\n2. Go to File > Import\n3. Upload the CSV file\n4. Use conditional formatting to highlight failed rows (Status = FAIL) in red');
         }
         
+        // Copy report link to clipboard
+        function copyReportLink() {
+            const input = document.getElementById('reportLinkInput');
+            input.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+        
+        // Open report link in new tab
+        function openReportLink() {
+            const link = document.getElementById('reportLinkInput').value;
+            window.open(link, '_blank');
+        }
+        
         // Export to HTML
-        function exportToHtml() {
+        async function exportToHtml() {
             if (analysisResults.length === 0) {
                 showError('No results to export');
                 return;
             }
+            
+            const githubToken = document.getElementById('githubToken').value.trim();
+            const githubRepo = document.getElementById('githubRepo').value.trim();
+            
+            // Check if GitHub is configured
+            const uploadToGitHub = githubToken && githubRepo;
             
             // Calculate summary stats
             const totalTests = analysisResults.length;
@@ -1139,13 +1250,97 @@
 </body>
 </html>`;
             
-            // Create download
+            
+            // Generate unique filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `pagespeed-report-${timestamp}.html`;
+            
+            if (uploadToGitHub) {
+                // Upload to GitHub
+                try {
+                    document.getElementById('reportLinkBox').style.display = 'none';
+                    
+                    // Show uploading message
+                    const originalButtonText = document.getElementById('exportHtmlBtn').textContent;
+                    document.getElementById('exportHtmlBtn').innerHTML = '<span class="loading"></span> Uploading to GitHub...';
+                    document.getElementById('exportHtmlBtn').disabled = true;
+                    
+                    const [owner, repo] = githubRepo.split('/');
+                    if (!owner || !repo) {
+                        throw new Error('Invalid repository format. Use: owner/repo');
+                    }
+                    
+                    // Upload file to GitHub
+                    const path = `reports/${filename}`;
+                    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${githubToken}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: `Add PageSpeed report: ${filename}`,
+                            content: btoa(unescape(encodeURIComponent(htmlContent))),
+                            branch: 'main'
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to upload to GitHub');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Generate shareable link (GitHub Pages format)
+                    const githubPagesUrl = `https://${owner}.github.io/${repo}/${path}`;
+                    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`;
+                    
+                    // Display the link
+                    document.getElementById('reportLinkInput').value = githubPagesUrl;
+                    document.getElementById('reportLinkBox').style.display = 'block';
+                    
+                    // Scroll to the link box
+                    document.getElementById('reportLinkBox').scrollIntoView({ behavior: 'smooth' });
+                    
+                    // Reset button
+                    document.getElementById('exportHtmlBtn').textContent = originalButtonText;
+                    document.getElementById('exportHtmlBtn').disabled = false;
+                    
+                    // Also copy to clipboard automatically
+                    const tempInput = document.createElement('input');
+                    tempInput.value = githubPagesUrl;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    
+                    alert(`✅ Report uploaded successfully!\n\nLink copied to clipboard:\n${githubPagesUrl}\n\nNote: If GitHub Pages is not enabled, use the raw URL or enable GitHub Pages in your repository settings.`);
+                    
+                } catch (error) {
+                    showError(`GitHub upload failed: ${error.message}`);
+                    document.getElementById('exportHtmlBtn').textContent = 'Export to HTML';
+                    document.getElementById('exportHtmlBtn').disabled = false;
+                    
+                    // Fallback to download
+                    downloadHtmlReport(htmlContent, filename);
+                }
+            } else {
+                // No GitHub configured, just download
+                downloadHtmlReport(htmlContent, filename);
+            }
+        }
+        
+        // Helper function to download HTML file
+        function downloadHtmlReport(htmlContent, filename) {
             const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             
             link.setAttribute('href', url);
-            link.setAttribute('download', `pagespeed-report-${Date.now()}.html`);
+            link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
             
             document.body.appendChild(link);
