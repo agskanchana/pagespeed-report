@@ -400,7 +400,8 @@
             
             <div class="info-box" style="background: #fff3cd; color: #856404;">
                 <strong>🔐 GitHub Setup:</strong> To auto-upload reports, create a <a href="https://github.com/settings/tokens/new" target="_blank">Personal Access Token</a> with <code>repo</code> permissions. 
-                Reports will be uploaded to the <code>reports/</code> folder in your repository.
+                Reports will be uploaded to the <code>reports/</code> folder in your repository.<br>
+                <strong>Repository format:</strong> Use <code>username/repo-name</code> or paste the full GitHub URL.
             </div>
             
             <div class="button-group">
@@ -1259,20 +1260,38 @@
                 // Upload to GitHub
                 try {
                     document.getElementById('reportLinkBox').style.display = 'none';
+                    hideError();
                     
                     // Show uploading message
                     const originalButtonText = document.getElementById('exportHtmlBtn').textContent;
                     document.getElementById('exportHtmlBtn').innerHTML = '<span class="loading"></span> Uploading to GitHub...';
                     document.getElementById('exportHtmlBtn').disabled = true;
                     
-                    const [owner, repo] = githubRepo.split('/');
-                    if (!owner || !repo) {
-                        throw new Error('Invalid repository format. Use: owner/repo');
+                    // Parse repository - handle full URLs or owner/repo format
+                    let owner, repo;
+                    if (githubRepo.includes('github.com')) {
+                        // Extract from URL: https://github.com/owner/repo
+                        const match = githubRepo.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+                        if (match) {
+                            owner = match[1];
+                            repo = match[2].replace('.git', '');
+                        }
+                    } else {
+                        // Direct owner/repo format
+                        [owner, repo] = githubRepo.split('/');
                     }
+                    
+                    if (!owner || !repo) {
+                        throw new Error('Invalid repository format. Use: owner/repo or paste the GitHub URL');
+                    }
+                    
+                    console.log('Uploading to:', owner, '/', repo);
                     
                     // Upload file to GitHub
                     const path = `reports/${filename}`;
                     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                    
+                    console.log('Uploading to:', apiUrl);
                     
                     const response = await fetch(apiUrl, {
                         method: 'PUT',
@@ -1287,19 +1306,22 @@
                         })
                     });
                     
+                    console.log('Response status:', response.status);
+                    
                     if (!response.ok) {
                         const errorData = await response.json();
+                        console.error('GitHub API error:', errorData);
                         throw new Error(errorData.message || 'Failed to upload to GitHub');
                     }
                     
                     const data = await response.json();
                     
-                    // Generate shareable link (GitHub Pages format)
-                    const githubPagesUrl = `https://${owner}.github.io/${repo}/${path}`;
+                    // Generate shareable links
                     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`;
+                    const githubPagesUrl = `https://${owner}.github.io/${repo}/${path}`;
                     
-                    // Display the link
-                    document.getElementById('reportLinkInput').value = githubPagesUrl;
+                    // Display the RAW URL (instantly accessible!)
+                    document.getElementById('reportLinkInput').value = rawUrl;
                     document.getElementById('reportLinkBox').style.display = 'block';
                     
                     // Scroll to the link box
@@ -1311,18 +1333,23 @@
                     
                     // Also copy to clipboard automatically
                     const tempInput = document.createElement('input');
-                    tempInput.value = githubPagesUrl;
+                    tempInput.value = rawUrl;
                     document.body.appendChild(tempInput);
                     tempInput.select();
                     document.execCommand('copy');
                     document.body.removeChild(tempInput);
                     
-                    alert(`✅ Report uploaded successfully!\n\nLink copied to clipboard:\n${githubPagesUrl}\n\nNote: If GitHub Pages is not enabled, use the raw URL or enable GitHub Pages in your repository settings.`);
+                    alert(`✅ Report uploaded successfully!\n\n🚀 INSTANT ACCESS (use this):\n${rawUrl}\n\n⏳ GitHub Pages URL (wait 1-2 mins):\n${githubPagesUrl}\n\nThe instant raw URL has been copied to your clipboard!`);
                     
                 } catch (error) {
+                    console.error('GitHub upload error:', error);
                     showError(`GitHub upload failed: ${error.message}`);
                     document.getElementById('exportHtmlBtn').textContent = 'Export to HTML';
                     document.getElementById('exportHtmlBtn').disabled = false;
+                    document.getElementById('reportLinkBox').style.display = 'none';
+                    
+                    // Show alert with detailed error
+                    alert(`❌ Upload Failed\n\n${error.message}\n\nDownloading file instead...`);
                     
                     // Fallback to download
                     downloadHtmlReport(htmlContent, filename);
