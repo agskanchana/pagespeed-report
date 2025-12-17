@@ -1319,9 +1319,10 @@
                     // Generate shareable links
                     const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`;
                     const githubPagesUrl = `https://${owner}.github.io/${repo}/${path}`;
+                    const htmlPreviewUrl = `https://htmlpreview.github.io/?${rawUrl}`;
                     
-                    // Display the RAW URL (instantly accessible!)
-                    document.getElementById('reportLinkInput').value = rawUrl;
+                    // Display the HTML Preview URL (instantly accessible and renders properly!)
+                    document.getElementById('reportLinkInput').value = htmlPreviewUrl;
                     document.getElementById('reportLinkBox').style.display = 'block';
                     
                     // Scroll to the link box
@@ -1333,13 +1334,13 @@
                     
                     // Also copy to clipboard automatically
                     const tempInput = document.createElement('input');
-                    tempInput.value = rawUrl;
+                    tempInput.value = htmlPreviewUrl;
                     document.body.appendChild(tempInput);
                     tempInput.select();
                     document.execCommand('copy');
                     document.body.removeChild(tempInput);
                     
-                    alert(`✅ Report uploaded successfully!\n\n🚀 INSTANT ACCESS (use this):\n${rawUrl}\n\n⏳ GitHub Pages URL (wait 1-2 mins):\n${githubPagesUrl}\n\nThe instant raw URL has been copied to your clipboard!`);
+                    alert(`✅ Report uploaded successfully!\n\n🚀 INSTANT PREVIEW (use this):\n${htmlPreviewUrl}\n\n📄 Raw URL:\n${rawUrl}\n\n⏳ GitHub Pages URL (wait 1-2 mins):\n${githubPagesUrl}\n\nThe preview link has been copied to your clipboard!`);
                     
                 } catch (error) {
                     console.error('GitHub upload error:', error);
